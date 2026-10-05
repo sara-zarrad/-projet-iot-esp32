@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Serre connectée · ESP32</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600&family=Inter:wght@400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #eef3ec;
+      --card: #fff;
+      --ink: #1f2d24;
+      --mute: #66756b;
+      --line: #d5dfd3;
+      --on: #2f8f4e;
+      --hot: #d2693a;
+      --wet: #2f7fa8
+    }
+
+    @media (prefers-color-scheme:dark) {
+      :root {
+        --bg: #141c17;
+        --card: #1c2620;
+        --ink: #e6efe8;
+        --mute: #93a498;
+        --line: #2d3a31;
+        --on: #58c47c;
+        --hot: #f0935f;
+        --wet: #6cb6dc
+      }
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, system-ui, sans-serif;
+      padding: 24px 16px
+    }
+
+    main {
+      max-width: 720px;
+      margin: 0 auto
+    }
+
+    h1 {
+      font-family: Fraunces, Georgia, serif;
+      font-size: 2rem;
+      margin: 0 0 4px
+    }
+
+    .status {
+      color: var(--mute);
+      font-size: .9rem;
+      margin-bottom: 24px
+    }
+
+    .status b {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--mute);
+      margin-right: 6px
+    }
+
+    .status.ok b {
+      background: var(--on)
+    }
+
+    .status.err b {
+      background: var(--hot)
+    }
+
+    .readings {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 20px
+    }
+
+    .val {
+      font-family: Fraunces, Georgia, serif;
+      font-size: 3rem;
+      line-height: 1
+    }
+
+    .val small {
+      font-size: 1.2rem;
+      color: var(--mute)
+    }
+
+    .label {
+      color: var(--mute);
+      margin-top: 6px
+    }
+
+    .bar {
+      height: 6px;
+      border-radius: 3px;
+      background: var(--line);
+      margin-top: 14px;
+      overflow: hidden
+    }
+
+    .bar i {
+      display: block;
+      height: 100%;
+      width: 0;
+      transition: width .6s
+    }
+
+    .leds {
+      display: grid;
+      gap: 12px
+    }
+
+    .led {
+      display: flex;
+      align-items: center;
+      justify-content: space-between
+    }
+
+    .led span {
+      font-weight: 500
+    }
+
+    .switch {
+      position: relative;
+      width: 54px;
+      height: 30px;
+      border-radius: 15px;
+      border: 0;
+      background: var(--line);
+      cursor: pointer;
+      transition: background .2s
+    }
+
+    .switch::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform .2s
+    }
+
+    .switch[aria-checked="true"] {
+      background: var(--on)
+    }
+
+    .switch[aria-checked="true"]::after {
+      transform: translateX(24px)
+    }
+
+    :focus-visible {
+      outline: 3px solid var(--wet);
+      outline-offset: 2px
+    }
+
+    @media (max-width:480px) {
+      .readings {
+        grid-template-columns: 1fr
+      }
+    }
+
+    @media (prefers-reduced-motion:reduce) {
+      * {
+        transition: none !important
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <h1>Serre connectée</h1>
+    <div class="status" id="status" role="status"><b></b><span>Connexion à Firebase…</span></div>
+
+    <section class="readings" aria-label="Mesures du capteur">
+      <div class="card">
+        <div class="val" id="temp">--<small> °C</small></div>
+        <div class="label">Température</div>
+        <div class="bar"><i id="tbar" style="background:var(--hot)"></i></div>
+      </div>
+      <div class="card">
+        <div class="val" id="hum">--<small> %</small></div>
+        <div class="label">Humidité</div>
+        <div class="bar"><i id="hbar" style="background:var(--wet)"></i></div>
+      </div>
+    </section>
+
+    <section class="card leds" aria-label="Commande des LEDs">
+      <div class="led"><span>LED 1 (GPIO 22)</span>
+        <button class="switch" id="led_1" role="switch" aria-checked="false" aria-label="LED 1"></button>
+      </div>
+      <div class="led"><span>LED 2 (GPIO 23)</span>
+        <button class="switch" id="led_2" role="switch" aria-checked="false" aria-label="LED 2"></button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const DB = "https://projetiot-e1bdb-default-rtdb.europe-west1.firebasedatabase.app";
+    const $ = id => document.getElementById(id);
+    const statusEl = $("status");
+
+    function setStatus(ok, msg) {
+      statusEl.className = "status " + (ok ? "ok" : "err");
+      statusEl.querySelector("span").textContent = msg;
+    }
+
+    let busy = false;
+    async function refresh() {
+      if (busy) return;
+      try {
+        const r = await fetch(DB + "/.json");
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        const d = await r.json() || {};
+        ["led_1", "led_2"].forEach(k => $(k).setAttribute("aria-checked", String(!!d[k])));
+        if (d.sensors) {
+          const t = d.sensors.temperature, h = d.sensors.humidity;
+          $("temp").innerHTML = t.toFixed(1) + "<small> °C</small>";
+          $("hum").innerHTML = h.toFixed(1) + "<small> %</small>";
+          $("tbar").style.width = Math.max(0, Math.min(100, (t + 40) / 120 * 100)) + "%";
+          $("hbar").style.width = Math.max(0, Math.min(100, h)) + "%";
+        }
+        setStatus(true, "Connecté · mis à jour à " + new Date().toLocaleTimeString("fr-FR"));
+      } catch (e) {
+        setStatus(false, "Lecture impossible (" + e.message + "). Vérifiez les règles de la base.");
+      }
+    }
+
+    async function toggle(key) {
+      const btn = $(key);
+      const next = btn.getAttribute("aria-checked") !== "true";
+      btn.setAttribute("aria-checked", String(next));
+      busy = true;
+      try {
+        const r = await fetch(DB + "/" + key + ".json", { method: "PUT", body: JSON.stringify(next) });
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        setStatus(true, (key === "led_1" ? "LED 1" : "LED 2") + (next ? " allumée" : " éteinte") + " · envoyé à Firebase");
+      } catch (e) {
+        btn.setAttribute("aria-checked", String(!next));
+        setStatus(false, "Écriture refusée (" + e.message + "). Ouvrez les règles Firebase : .write doit être true.");
+      } finally {
+        setTimeout(() => { busy = false; }, 1500);
+      }
+    }
+
+    ["led_1", "led_2"].forEach(k => $(k).addEventListener("click", () => toggle(k)));
+    refresh();
+    setInterval(refresh, 2000);
+  </script>
+</body>
+
+</html>

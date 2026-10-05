@@ -1,0 +1,14 @@
+# PlatformIO build artifacts
+.pio/
+compile_commands.json
+.cache/
+
+# VS Code / IDE settings
+.vscode/
+
+# Firebase cache
+.firebase/
+
+# OS artifacts
+.DS_Store
+Thumbs.db

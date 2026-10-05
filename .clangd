@@ -1,0 +1,30 @@
+CompileFlags:
+  CompilationDatabase: .
+  Compiler: C:/Users/user/.platformio/packages/toolchain-xtensa-esp32/bin/xtensa-esp32-elf-g++.exe
+  Add:
+    - "-m32"
+    - "-D_ssize_t=int"
+    - "-D_POSIX_C_SOURCE=200809L"
+    - "-D__xtensa__"
+    - "-DESP32"
+    - "-DARDUINO_ARCH_ESP32"
+    - "-isystemC:/Users/user/.platformio/packages/toolchain-xtensa-esp32/xtensa-esp32-elf/include/c++/8.4.0"
+    - "-isystemC:/Users/user/.platformio/packages/toolchain-xtensa-esp32/xtensa-esp32-elf/include/c++/8.4.0/xtensa-esp32-elf"
+    - "-isystemC:/Users/user/.platformio/packages/toolchain-xtensa-esp32/xtensa-esp32-elf/include"
+    - "-isystemC:/Users/user/.platformio/packages/toolchain-xtensa-esp32/lib/gcc/xtensa-esp32-elf/8.4.0/include"
+    - "-isystemC:/Users/user/.platformio/packages/toolchain-xtensa-esp32/lib/gcc/xtensa-esp32-elf/8.4.0/include-fixed"
+    - "-Wno-everything"
+  Remove:
+    - "-fno-tree-switch-conversion"
+    - "-mma"
+    - "-mfix-esp32-psram-cache-issue"
+    - "-mfix-esp32-psram-cache-strategy=memw"
+    - "-mlongcalls"
+    - "-fstrict-volatile-bitfields"
+
+Diagnostics:
+  Suppress:
+    - "*"
+    - "typedef_redefinition"
+    - "expected_fn_body"
+    - "pp_file_not_found"
