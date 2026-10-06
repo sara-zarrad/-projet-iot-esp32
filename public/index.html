@@ -23,7 +23,6 @@
       --mute: #88a396;
       --lime: #b8f26b;
       --sky: #6fd3ff;
-      --water: #4fc3e8;
       --bad: #ff8a5c
     }
 
@@ -329,6 +328,44 @@
       outline-offset: 3px
     }
 
+    .tablewrap {
+      margin-top: 14px;
+      max-height: 340px;
+      overflow: auto;
+      border-radius: 14px;
+      border: 1px solid var(--line)
+    }
+
+    .log {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .9rem;
+      font-variant-numeric: tabular-nums
+    }
+
+    .log th {
+      position: sticky;
+      top: 0;
+      background: var(--panel2);
+      color: var(--mute);
+      font-weight: 500;
+      text-align: left;
+      padding: 10px 14px
+    }
+
+    .log td {
+      padding: 9px 14px;
+      border-top: 1px solid var(--line)
+    }
+
+    .log td:nth-child(2) {
+      color: var(--lime)
+    }
+
+    .log td:nth-child(3) {
+      color: var(--sky)
+    }
+
     @media (max-width:560px) {
       .row.sensors {
         grid-template-columns: 1fr
@@ -395,6 +432,26 @@
         <strong>Lampe bleue</strong><span>LED 2, GPIO 23</span><em id="t2">Éteinte</em>
       </button>
     </section>
+
+    <section class="card" aria-label="Journal des capteurs">
+      <div class="lbl">Journal des capteurs</div>
+      <div class="tablewrap">
+        <table class="log">
+          <thead>
+            <tr>
+              <th>Temps</th>
+              <th>Température</th>
+              <th>Humidité</th>
+            </tr>
+          </thead>
+          <tbody id="log">
+            <tr>
+              <td colspan="3">Chargement…</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
   </main>
 
   <script>
@@ -407,14 +464,12 @@
       $("status").className = "pill " + (ok ? "ok" : "err");
       $("status").querySelector("span").textContent = msg;
     }
-
     function setLed(k, on) {
       const n = k === "led_1" ? "1" : "2";
       $(k).setAttribute("aria-checked", String(on));
       $("t" + n).textContent = on ? "Allumée" : "Éteinte";
       document.body.classList.toggle("l" + n, on);
     }
-
     function setSensors(s) {
       const t = Number(s.temperature), h = Number(s.humidity);
       if (!isNaN(t)) {
@@ -429,25 +484,23 @@
       }
     }
 
+    // Lit uniquement les LEDs et les capteurs (sans télécharger tout l'historique)
     async function refresh() {
       if (busy) return;
       try {
-        const r = await fetch(DB + "/.json");
-        if (!r.ok) throw new Error("HTTP " + r.status);
-        const d = await r.json() || {};
-        setLed("led_1", !!d.led_1);
-        setLed("led_2", !!d.led_2);
-        if (d.sensors) setSensors(d.sensors);
+        const [a, b, c] = await Promise.all(["led_1", "led_2", "sensors"].map(k => fetch(DB + "/" + k + ".json")));
+        if (!a.ok) throw new Error("HTTP " + a.status);
+        setLed("led_1", !!(await a.json()));
+        setLed("led_2", !!(await b.json()));
+        const s = await c.json();
+        if (s) setSensors(s);
         setStatus(true, "En ligne, " + new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
-      } catch (e) {
-        setStatus(false, "Lecture impossible (" + e.message + ")");
-      }
+      } catch (e) { setStatus(false, "Lecture impossible (" + e.message + ")"); }
     }
 
     async function toggle(k) {
       const next = $(k).getAttribute("aria-checked") !== "true";
-      setLed(k, next);
-      busy = true;
+      setLed(k, next); busy = true;
       try {
         const r = await fetch(DB + "/" + k + ".json", { method: "PUT", body: JSON.stringify(next) });
         if (!r.ok) throw new Error("HTTP " + r.status);
@@ -455,14 +508,28 @@
       } catch (e) {
         setLed(k, !next);
         setStatus(false, "Écriture refusée (" + e.message + "). Vérifiez les règles Firebase");
-      } finally {
-        setTimeout(() => { busy = false; }, 1500);
+      } finally { setTimeout(() => { busy = false; }, 1500); }
+    }
+
+    // Journal : 100 dernières mesures de /history, plus récentes en haut
+    async function loadHistory() {
+      try {
+        const r = await fetch(DB + "/history.json?orderBy=%22%24key%22&limitToLast=100");
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        const rows = Object.values(await r.json() || {}).sort((a, b) => b.ts - a.ts);
+        $("log").innerHTML = rows.map(e => `<tr>
+      <td>${new Date(e.ts).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" })}</td>
+      <td>${Number(e.temperature).toFixed(1)} °C</td>
+      <td>${Number(e.humidity).toFixed(0)} %</td></tr>`).join("")
+          || '<tr><td colspan="3">Aucune mesure enregistrée</td></tr>';
+      } catch (e) {
+        $("log").innerHTML = '<tr><td colspan="3">Historique indisponible (' + e.message + ')</td></tr>';
       }
     }
 
     ["led_1", "led_2"].forEach(k => $(k).addEventListener("click", () => toggle(k)));
-    refresh();
-    setInterval(refresh, 2000);
+    refresh(); setInterval(refresh, 2000);
+    loadHistory(); setInterval(loadHistory, 30000);
   </script>
 </body>
 
