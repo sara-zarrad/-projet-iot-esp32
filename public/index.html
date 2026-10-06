@@ -3,185 +3,341 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Serre connectée · ESP32</title>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600&family=Inter:wght@400;500&display=swap"
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1a17">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Serre">
+  <title>Serre connectée</title>
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=DM+Sans:wght@400;500&display=swap"
     rel="stylesheet">
   <style>
     :root {
-      --bg: #eef3ec;
-      --card: #fff;
-      --ink: #1f2d24;
-      --mute: #66756b;
-      --line: #d5dfd3;
-      --on: #2f8f4e;
-      --hot: #d2693a;
-      --wet: #2f7fa8
-    }
-
-    @media (prefers-color-scheme:dark) {
-      :root {
-        --bg: #141c17;
-        --card: #1c2620;
-        --ink: #e6efe8;
-        --mute: #93a498;
-        --line: #2d3a31;
-        --on: #58c47c;
-        --hot: #f0935f;
-        --wet: #6cb6dc
-      }
+      --bg: #0b1a17;
+      --panel: #11251f;
+      --panel2: #16302a;
+      --line: #244139;
+      --ink: #e9f2e7;
+      --mute: #88a396;
+      --lime: #b8f26b;
+      --sky: #6fd3ff;
+      --water: #4fc3e8;
+      --bad: #ff8a5c
     }
 
     * {
-      box-sizing: border-box
+      box-sizing: border-box;
+      margin: 0
+    }
+
+    html {
+      background: var(--bg)
     }
 
     body {
-      margin: 0;
-      background: var(--bg);
+      min-height: 100dvh;
       color: var(--ink);
-      font-family: Inter, system-ui, sans-serif;
-      padding: 24px 16px
+      font: 400 1rem/1.4 "DM Sans", system-ui, sans-serif;
+      padding: max(28px, env(safe-area-inset-top)) 18px max(28px, env(safe-area-inset-bottom));
+      position: relative;
+      overflow-x: hidden
+    }
+
+    .glow {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .9s ease;
+      z-index: 0
+    }
+
+    .g1 {
+      background: radial-gradient(70% 45% at 10% 0%, rgba(184, 242, 107, .30), transparent 70%)
+    }
+
+    .g2 {
+      background: radial-gradient(70% 45% at 90% 100%, rgba(111, 211, 255, .28), transparent 70%)
+    }
+
+    body.l1 .g1,
+    body.l2 .g2 {
+      opacity: 1
     }
 
     main {
-      max-width: 720px;
-      margin: 0 auto
+      position: relative;
+      z-index: 1;
+      max-width: 760px;
+      margin: 0 auto;
+      display: grid;
+      gap: 16px
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 8px
     }
 
     h1 {
-      font-family: Fraunces, Georgia, serif;
-      font-size: 2rem;
-      margin: 0 0 4px
+      font: 700 clamp(2.2rem, 8vw, 3.2rem)/1 "Bricolage Grotesque", sans-serif;
+      letter-spacing: -.03em
     }
 
-    .status {
+    .sub {
       color: var(--mute);
-      font-size: .9rem;
-      margin-bottom: 24px
+      margin-top: 8px
     }
 
-    .status b {
-      display: inline-block;
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      background: var(--mute);
-      margin-right: 6px
-    }
-
-    .status.ok b {
-      background: var(--on)
-    }
-
-    .status.err b {
-      background: var(--hot)
-    }
-
-    .readings {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-bottom: 16px
-    }
-
-    .card {
-      background: var(--card);
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 14px;
       border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 20px
-    }
-
-    .val {
-      font-family: Fraunces, Georgia, serif;
-      font-size: 3rem;
-      line-height: 1
-    }
-
-    .val small {
-      font-size: 1.2rem;
+      border-radius: 99px;
+      background: var(--panel);
+      font-size: .85rem;
       color: var(--mute)
     }
 
-    .label {
-      color: var(--mute);
-      margin-top: 6px
+    .pill i {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--mute)
     }
 
-    .bar {
-      height: 6px;
-      border-radius: 3px;
-      background: var(--line);
-      margin-top: 14px;
-      overflow: hidden
+    .pill.ok i {
+      background: var(--lime);
+      box-shadow: 0 0 10px var(--lime)
     }
 
-    .bar i {
-      display: block;
-      height: 100%;
-      width: 0;
-      transition: width .6s
+    .pill.err {
+      color: var(--bad)
     }
 
-    .leds {
+    .pill.err i {
+      background: var(--bad)
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 26px;
+      padding: 24px
+    }
+
+    .row {
       display: grid;
-      gap: 12px
+      grid-template-columns: 1fr 1fr;
+      gap: 16px
     }
 
-    .led {
-      display: flex;
-      align-items: center;
-      justify-content: space-between
+    .lbl {
+      color: var(--mute);
+      font-size: .9rem
     }
 
-    .led span {
+    .big {
+      font: 700 clamp(3.6rem, 16vw, 5.4rem)/1 "Bricolage Grotesque", sans-serif;
+      letter-spacing: -.04em;
+      margin: 10px 0 4px
+    }
+
+    .big small {
+      font-size: .38em;
+      color: var(--mute);
+      font-weight: 500;
+      letter-spacing: 0;
+      margin-left: 4px
+    }
+
+    .tag {
       font-weight: 500
     }
 
-    .switch {
+    .scale {
       position: relative;
-      width: 54px;
-      height: 30px;
-      border-radius: 15px;
-      border: 0;
-      background: var(--line);
-      cursor: pointer;
-      transition: background .2s
+      height: 8px;
+      border-radius: 4px;
+      margin-top: 26px;
+      background: linear-gradient(90deg, #5fb4ff, #9be38b 45%, #ffd36b 70%, #ff7a4d)
     }
 
-    .switch::after {
+    .mk {
+      position: absolute;
+      top: -6px;
+      left: 0;
+      width: 4px;
+      height: 20px;
+      border-radius: 2px;
+      background: #fff;
+      box-shadow: 0 0 0 3px var(--panel);
+      transition: left .8s cubic-bezier(.2, .8, .2, 1)
+    }
+
+    .ends {
+      display: flex;
+      justify-content: space-between;
+      color: var(--mute);
+      font-size: .78rem;
+      margin-top: 10px
+    }
+
+    .hum {
+      display: flex;
+      align-items: center;
+      gap: 20px
+    }
+
+    .tank {
+      position: relative;
+      flex: none;
+      width: 128px;
+      height: 128px;
+      border-radius: 50%;
+      border: 2px solid var(--line);
+      overflow: hidden;
+      background: #0d1f1a
+    }
+
+    .water {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 0;
+      background: rgba(79, 195, 232, .88);
+      transition: height 1s cubic-bezier(.2, .8, .2, 1)
+    }
+
+    .water::before {
       content: "";
       position: absolute;
-      top: 3px;
-      left: 3px;
-      width: 24px;
-      height: 24px;
+      left: -50%;
+      top: -12px;
+      width: 200%;
+      height: 26px;
       border-radius: 50%;
-      background: #fff;
-      transition: transform .2s
+      background: rgba(79, 195, 232, .88);
+      animation: slosh 7s linear infinite
     }
 
-    .switch[aria-checked="true"] {
-      background: var(--on)
+    @keyframes slosh {
+      to {
+        transform: translateX(25%)
+      }
     }
 
-    .switch[aria-checked="true"]::after {
-      transform: translateX(24px)
+    .tank b {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font: 700 1.9rem "Bricolage Grotesque", sans-serif;
+      text-shadow: 0 1px 8px rgba(0, 0, 0, .55)
+    }
+
+    .lamp {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+      text-align: left;
+      width: 100%;
+      cursor: pointer;
+      color: var(--ink);
+      font: inherit;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 26px;
+      padding: 22px;
+      transition: border-color .3s, box-shadow .4s, background .3s;
+      -webkit-tap-highlight-color: transparent
+    }
+
+    .lamp svg {
+      width: 52px;
+      height: 68px;
+      margin-bottom: 8px;
+      fill: var(--panel2);
+      stroke: var(--line);
+      stroke-width: 2;
+      transition: fill .3s, filter .4s, stroke .3s
+    }
+
+    .lamp strong {
+      font: 700 1.25rem "Bricolage Grotesque", sans-serif
+    }
+
+    .lamp span {
+      color: var(--mute);
+      font-size: .88rem
+    }
+
+    .lamp em {
+      font-style: normal;
+      font-weight: 500;
+      margin-top: 6px
+    }
+
+    #led_1[aria-checked=true] {
+      border-color: var(--lime);
+      background: var(--panel2);
+      box-shadow: 0 0 36px rgba(184, 242, 107, .22)
+    }
+
+    #led_1[aria-checked=true] svg {
+      fill: var(--lime);
+      stroke: var(--lime);
+      filter: drop-shadow(0 0 14px rgba(184, 242, 107, .8))
+    }
+
+    #led_1[aria-checked=true] em {
+      color: var(--lime)
+    }
+
+    #led_2[aria-checked=true] {
+      border-color: var(--sky);
+      background: var(--panel2);
+      box-shadow: 0 0 36px rgba(111, 211, 255, .22)
+    }
+
+    #led_2[aria-checked=true] svg {
+      fill: var(--sky);
+      stroke: var(--sky);
+      filter: drop-shadow(0 0 14px rgba(111, 211, 255, .8))
+    }
+
+    #led_2[aria-checked=true] em {
+      color: var(--sky)
+    }
+
+    .lamp:active {
+      transform: scale(.98)
     }
 
     :focus-visible {
-      outline: 3px solid var(--wet);
-      outline-offset: 2px
+      outline: 3px solid var(--sky);
+      outline-offset: 3px
     }
 
-    @media (max-width:480px) {
-      .readings {
+    @media (max-width:560px) {
+      .row.sensors {
         grid-template-columns: 1fr
       }
     }
 
     @media (prefers-reduced-motion:reduce) {
       * {
+        animation: none !important;
         transition: none !important
       }
     }
@@ -189,76 +345,116 @@
 </head>
 
 <body>
+  <div class="glow g1"></div>
+  <div class="glow g2"></div>
   <main>
-    <h1>Serre connectée</h1>
-    <div class="status" id="status" role="status"><b></b><span>Connexion à Firebase…</span></div>
+    <header>
+      <div>
+        <h1>Serre connectée</h1>
+        <p class="sub">Climat et éclairage, en direct</p>
+      </div>
+      <div class="pill" id="status" role="status"><i></i><span>Connexion…</span></div>
+    </header>
 
-    <section class="readings" aria-label="Mesures du capteur">
+    <section class="row sensors" aria-label="Mesures du capteur">
       <div class="card">
-        <div class="val" id="temp">--<small> °C</small></div>
-        <div class="label">Température</div>
-        <div class="bar"><i id="tbar" style="background:var(--hot)"></i></div>
+        <div class="lbl">Température</div>
+        <div class="big" id="temp">--<small>°C</small></div>
+        <div class="tag" id="tempTag">En attente du capteur</div>
+        <div class="scale">
+          <div class="mk" id="mk"></div>
+        </div>
+        <div class="ends"><span>−10°</span><span>50°</span></div>
       </div>
       <div class="card">
-        <div class="val" id="hum">--<small> %</small></div>
-        <div class="label">Humidité</div>
-        <div class="bar"><i id="hbar" style="background:var(--wet)"></i></div>
+        <div class="lbl">Humidité de l'air</div>
+        <div class="hum" style="margin-top:14px">
+          <div class="tank">
+            <div class="water" id="water"></div><b id="hum">--%</b>
+          </div>
+          <div class="tag" id="humTag">En attente du capteur</div>
+        </div>
       </div>
     </section>
 
-    <section class="card leds" aria-label="Commande des LEDs">
-      <div class="led"><span>LED 1 (GPIO 22)</span>
-        <button class="switch" id="led_1" role="switch" aria-checked="false" aria-label="LED 1"></button>
-      </div>
-      <div class="led"><span>LED 2 (GPIO 23)</span>
-        <button class="switch" id="led_2" role="switch" aria-checked="false" aria-label="LED 2"></button>
-      </div>
+    <section class="row" aria-label="Lampes">
+      <button class="lamp" id="led_1" role="switch" aria-checked="false">
+        <svg viewBox="0 0 48 64" aria-hidden="true">
+          <path d="M24 4C13 4 6 12 6 22c0 7 4 11 8 16 2 3 3 5 3 8h14c0-3 1-5 3-8 4-5 8-9 8-16C42 12 35 4 24 4z" />
+          <rect x="16" y="50" width="16" height="5" rx="2" />
+          <rect x="19" y="57" width="10" height="4" rx="2" />
+        </svg>
+        <strong>Lampe verte</strong><span>LED 1, GPIO 22</span><em id="t1">Éteinte</em>
+      </button>
+      <button class="lamp" id="led_2" role="switch" aria-checked="false">
+        <svg viewBox="0 0 48 64" aria-hidden="true">
+          <path d="M24 4C13 4 6 12 6 22c0 7 4 11 8 16 2 3 3 5 3 8h14c0-3 1-5 3-8 4-5 8-9 8-16C42 12 35 4 24 4z" />
+          <rect x="16" y="50" width="16" height="5" rx="2" />
+          <rect x="19" y="57" width="10" height="4" rx="2" />
+        </svg>
+        <strong>Lampe bleue</strong><span>LED 2, GPIO 23</span><em id="t2">Éteinte</em>
+      </button>
     </section>
   </main>
 
   <script>
     const DB = "https://projetiot-e1bdb-default-rtdb.europe-west1.firebasedatabase.app";
     const $ = id => document.getElementById(id);
-    const statusEl = $("status");
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+    let busy = false;
 
     function setStatus(ok, msg) {
-      statusEl.className = "status " + (ok ? "ok" : "err");
-      statusEl.querySelector("span").textContent = msg;
+      $("status").className = "pill " + (ok ? "ok" : "err");
+      $("status").querySelector("span").textContent = msg;
     }
 
-    let busy = false;
+    function setLed(k, on) {
+      const n = k === "led_1" ? "1" : "2";
+      $(k).setAttribute("aria-checked", String(on));
+      $("t" + n).textContent = on ? "Allumée" : "Éteinte";
+      document.body.classList.toggle("l" + n, on);
+    }
+
+    function setSensors(s) {
+      const t = Number(s.temperature), h = Number(s.humidity);
+      if (!isNaN(t)) {
+        $("temp").innerHTML = t.toFixed(1) + "<small>°C</small>";
+        $("mk").style.left = "calc(" + clamp((t + 10) / 60 * 100, 0, 100) + "% - 2px)";
+        $("tempTag").textContent = t < 12 ? "Frais" : t < 18 ? "Doux" : t <= 26 ? "Agréable" : t <= 32 ? "Chaud" : "Très chaud";
+      }
+      if (!isNaN(h)) {
+        $("hum").textContent = Math.round(h) + "%";
+        $("water").style.height = clamp(h, 0, 100) + "%";
+        $("humTag").textContent = h < 30 ? "Air sec" : h <= 60 ? "Confortable" : "Air humide";
+      }
+    }
+
     async function refresh() {
       if (busy) return;
       try {
         const r = await fetch(DB + "/.json");
         if (!r.ok) throw new Error("HTTP " + r.status);
         const d = await r.json() || {};
-        ["led_1", "led_2"].forEach(k => $(k).setAttribute("aria-checked", String(!!d[k])));
-        if (d.sensors) {
-          const t = d.sensors.temperature, h = d.sensors.humidity;
-          $("temp").innerHTML = t.toFixed(1) + "<small> °C</small>";
-          $("hum").innerHTML = h.toFixed(1) + "<small> %</small>";
-          $("tbar").style.width = Math.max(0, Math.min(100, (t + 40) / 120 * 100)) + "%";
-          $("hbar").style.width = Math.max(0, Math.min(100, h)) + "%";
-        }
-        setStatus(true, "Connecté · mis à jour à " + new Date().toLocaleTimeString("fr-FR"));
+        setLed("led_1", !!d.led_1);
+        setLed("led_2", !!d.led_2);
+        if (d.sensors) setSensors(d.sensors);
+        setStatus(true, "En ligne, " + new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
       } catch (e) {
-        setStatus(false, "Lecture impossible (" + e.message + "). Vérifiez les règles de la base.");
+        setStatus(false, "Lecture impossible (" + e.message + ")");
       }
     }
 
-    async function toggle(key) {
-      const btn = $(key);
-      const next = btn.getAttribute("aria-checked") !== "true";
-      btn.setAttribute("aria-checked", String(next));
+    async function toggle(k) {
+      const next = $(k).getAttribute("aria-checked") !== "true";
+      setLed(k, next);
       busy = true;
       try {
-        const r = await fetch(DB + "/" + key + ".json", { method: "PUT", body: JSON.stringify(next) });
+        const r = await fetch(DB + "/" + k + ".json", { method: "PUT", body: JSON.stringify(next) });
         if (!r.ok) throw new Error("HTTP " + r.status);
-        setStatus(true, (key === "led_1" ? "LED 1" : "LED 2") + (next ? " allumée" : " éteinte") + " · envoyé à Firebase");
+        setStatus(true, (k === "led_1" ? "Lampe verte" : "Lampe bleue") + (next ? " allumée" : " éteinte"));
       } catch (e) {
-        btn.setAttribute("aria-checked", String(!next));
-        setStatus(false, "Écriture refusée (" + e.message + "). Ouvrez les règles Firebase : .write doit être true.");
+        setLed(k, !next);
+        setStatus(false, "Écriture refusée (" + e.message + "). Vérifiez les règles Firebase");
       } finally {
         setTimeout(() => { busy = false; }, 1500);
       }
