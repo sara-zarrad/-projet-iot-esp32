@@ -1,536 +1,283 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0b1a17">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Serre">
-  <title>Serre connectée</title>
-  <link rel="icon"
-    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>">
-  <link
-    href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=DM+Sans:wght@400;500&display=swap"
-    rel="stylesheet">
-  <style>
-    :root {
-      --bg: #0b1a17;
-      --panel: #11251f;
-      --panel2: #16302a;
-      --line: #244139;
-      --ink: #e9f2e7;
-      --mute: #88a396;
-      --lime: #b8f26b;
-      --sky: #6fd3ff;
-      --bad: #ff8a5c
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0
-    }
-
-    html {
-      background: var(--bg)
-    }
-
-    body {
-      min-height: 100dvh;
-      color: var(--ink);
-      font: 400 1rem/1.4 "DM Sans", system-ui, sans-serif;
-      padding: max(28px, env(safe-area-inset-top)) 18px max(28px, env(safe-area-inset-bottom));
-      position: relative;
-      overflow-x: hidden
-    }
-
-    .glow {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity .9s ease;
-      z-index: 0
-    }
-
-    .g1 {
-      background: radial-gradient(70% 45% at 10% 0%, rgba(184, 242, 107, .30), transparent 70%)
-    }
-
-    .g2 {
-      background: radial-gradient(70% 45% at 90% 100%, rgba(111, 211, 255, .28), transparent 70%)
-    }
-
-    body.l1 .g1,
-    body.l2 .g2 {
-      opacity: 1
-    }
-
-    main {
-      position: relative;
-      z-index: 1;
-      max-width: 760px;
-      margin: 0 auto;
-      display: grid;
-      gap: 16px
-    }
-
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 8px
-    }
-
-    h1 {
-      font: 700 clamp(2.2rem, 8vw, 3.2rem)/1 "Bricolage Grotesque", sans-serif;
-      letter-spacing: -.03em
-    }
-
-    .sub {
-      color: var(--mute);
-      margin-top: 8px
-    }
-
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 7px 14px;
-      border: 1px solid var(--line);
-      border-radius: 99px;
-      background: var(--panel);
-      font-size: .85rem;
-      color: var(--mute)
-    }
-
-    .pill i {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--mute)
-    }
-
-    .pill.ok i {
-      background: var(--lime);
-      box-shadow: 0 0 10px var(--lime)
-    }
-
-    .pill.err {
-      color: var(--bad)
-    }
-
-    .pill.err i {
-      background: var(--bad)
-    }
-
-    .card {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 26px;
-      padding: 24px
-    }
-
-    .row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px
-    }
-
-    .lbl {
-      color: var(--mute);
-      font-size: .9rem
-    }
-
-    .big {
-      font: 700 clamp(3.6rem, 16vw, 5.4rem)/1 "Bricolage Grotesque", sans-serif;
-      letter-spacing: -.04em;
-      margin: 10px 0 4px
-    }
-
-    .big small {
-      font-size: .38em;
-      color: var(--mute);
-      font-weight: 500;
-      letter-spacing: 0;
-      margin-left: 4px
-    }
-
-    .tag {
-      font-weight: 500
-    }
-
-    .scale {
-      position: relative;
-      height: 8px;
-      border-radius: 4px;
-      margin-top: 26px;
-      background: linear-gradient(90deg, #5fb4ff, #9be38b 45%, #ffd36b 70%, #ff7a4d)
-    }
-
-    .mk {
-      position: absolute;
-      top: -6px;
-      left: 0;
-      width: 4px;
-      height: 20px;
-      border-radius: 2px;
-      background: #fff;
-      box-shadow: 0 0 0 3px var(--panel);
-      transition: left .8s cubic-bezier(.2, .8, .2, 1)
-    }
-
-    .ends {
-      display: flex;
-      justify-content: space-between;
-      color: var(--mute);
-      font-size: .78rem;
-      margin-top: 10px
-    }
-
-    .hum {
-      display: flex;
-      align-items: center;
-      gap: 20px
-    }
-
-    .tank {
-      position: relative;
-      flex: none;
-      width: 128px;
-      height: 128px;
-      border-radius: 50%;
-      border: 2px solid var(--line);
-      overflow: hidden;
-      background: #0d1f1a
-    }
-
-    .water {
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      height: 0;
-      background: rgba(79, 195, 232, .88);
-      transition: height 1s cubic-bezier(.2, .8, .2, 1)
-    }
-
-    .water::before {
-      content: "";
-      position: absolute;
-      left: -50%;
-      top: -12px;
-      width: 200%;
-      height: 26px;
-      border-radius: 50%;
-      background: rgba(79, 195, 232, .88);
-      animation: slosh 7s linear infinite
-    }
-
-    @keyframes slosh {
-      to {
-        transform: translateX(25%)
-      }
-    }
-
-    .tank b {
-      position: absolute;
-      inset: 0;
-      display: grid;
-      place-items: center;
-      font: 700 1.9rem "Bricolage Grotesque", sans-serif;
-      text-shadow: 0 1px 8px rgba(0, 0, 0, .55)
-    }
-
-    .lamp {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 6px;
-      text-align: left;
-      width: 100%;
-      cursor: pointer;
-      color: var(--ink);
-      font: inherit;
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 26px;
-      padding: 22px;
-      transition: border-color .3s, box-shadow .4s, background .3s;
-      -webkit-tap-highlight-color: transparent
-    }
-
-    .lamp svg {
-      width: 52px;
-      height: 68px;
-      margin-bottom: 8px;
-      fill: var(--panel2);
-      stroke: var(--line);
-      stroke-width: 2;
-      transition: fill .3s, filter .4s, stroke .3s
-    }
-
-    .lamp strong {
-      font: 700 1.25rem "Bricolage Grotesque", sans-serif
-    }
-
-    .lamp span {
-      color: var(--mute);
-      font-size: .88rem
-    }
-
-    .lamp em {
-      font-style: normal;
-      font-weight: 500;
-      margin-top: 6px
-    }
-
-    #led_1[aria-checked=true] {
-      border-color: var(--lime);
-      background: var(--panel2);
-      box-shadow: 0 0 36px rgba(184, 242, 107, .22)
-    }
-
-    #led_1[aria-checked=true] svg {
-      fill: var(--lime);
-      stroke: var(--lime);
-      filter: drop-shadow(0 0 14px rgba(184, 242, 107, .8))
-    }
-
-    #led_1[aria-checked=true] em {
-      color: var(--lime)
-    }
-
-    #led_2[aria-checked=true] {
-      border-color: var(--sky);
-      background: var(--panel2);
-      box-shadow: 0 0 36px rgba(111, 211, 255, .22)
-    }
-
-    #led_2[aria-checked=true] svg {
-      fill: var(--sky);
-      stroke: var(--sky);
-      filter: drop-shadow(0 0 14px rgba(111, 211, 255, .8))
-    }
-
-    #led_2[aria-checked=true] em {
-      color: var(--sky)
-    }
-
-    .lamp:active {
-      transform: scale(.98)
-    }
-
-    :focus-visible {
-      outline: 3px solid var(--sky);
-      outline-offset: 3px
-    }
-
-    .tablewrap {
-      margin-top: 14px;
-      max-height: 340px;
-      overflow: auto;
-      border-radius: 14px;
-      border: 1px solid var(--line)
-    }
-
-    .log {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: .9rem;
-      font-variant-numeric: tabular-nums
-    }
-
-    .log th {
-      position: sticky;
-      top: 0;
-      background: var(--panel2);
-      color: var(--mute);
-      font-weight: 500;
-      text-align: left;
-      padding: 10px 14px
-    }
-
-    .log td {
-      padding: 9px 14px;
-      border-top: 1px solid var(--line)
-    }
-
-    .log td:nth-child(2) {
-      color: var(--lime)
-    }
-
-    .log td:nth-child(3) {
-      color: var(--sky)
-    }
-
-    @media (max-width:560px) {
-      .row.sensors {
-        grid-template-columns: 1fr
-      }
-    }
-
-    @media (prefers-reduced-motion:reduce) {
-      * {
-        animation: none !important;
-        transition: none !important
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b1a17">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Serre">
+<title>Serre connectée</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b1a17;--panel:#11251f;--panel2:#16302a;--line:#244139;--ink:#e9f2e7;--mute:#88a396;--lime:#b8f26b;--sky:#6fd3ff;--bad:#ff8a5c}
+*{box-sizing:border-box;margin:0}
+html{background:var(--bg)}
+body{min-height:100dvh;color:var(--ink);font:400 1rem/1.4 "DM Sans",system-ui,sans-serif;padding:max(28px,env(safe-area-inset-top)) 18px max(28px,env(safe-area-inset-bottom));position:relative;overflow-x:hidden}
+.glow{position:fixed;inset:0;pointer-events:none;opacity:0;transition:opacity .9s ease;z-index:0}
+.g1{background:radial-gradient(70% 45% at 10% 0%,rgba(184,242,107,.30),transparent 70%)}
+.g2{background:radial-gradient(70% 45% at 90% 100%,rgba(111,211,255,.28),transparent 70%)}
+body.l1 .g1,body.l2 .g2{opacity:1}
+main{position:relative;z-index:1;max-width:760px;margin:0 auto;display:grid;gap:16px}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+h1{font:700 clamp(2.2rem,8vw,3.2rem)/1 "Bricolage Grotesque",sans-serif;letter-spacing:-.03em}
+.sub{color:var(--mute);margin-top:8px}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border:1px solid var(--line);border-radius:99px;background:var(--panel);font-size:.85rem;color:var(--mute)}
+.pill i{width:8px;height:8px;border-radius:50%;background:var(--mute)}
+.pill.ok i{background:var(--lime);box-shadow:0 0 10px var(--lime)}
+.pill.err{color:var(--bad)}.pill.err i{background:var(--bad)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:26px;padding:24px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.lbl{color:var(--mute);font-size:.9rem}
+.big{font:700 clamp(3.6rem,16vw,5.4rem)/1 "Bricolage Grotesque",sans-serif;letter-spacing:-.04em;margin:10px 0 4px}
+.big small{font-size:.38em;color:var(--mute);font-weight:500;letter-spacing:0;margin-left:4px}
+.tag{font-weight:500}
+.scale{position:relative;height:8px;border-radius:4px;margin-top:26px;background:linear-gradient(90deg,#5fb4ff,#9be38b 45%,#ffd36b 70%,#ff7a4d)}
+.mk{position:absolute;top:-6px;left:0;width:4px;height:20px;border-radius:2px;background:#fff;box-shadow:0 0 0 3px var(--panel);transition:left .8s cubic-bezier(.2,.8,.2,1)}
+.ends{display:flex;justify-content:space-between;color:var(--mute);font-size:.78rem;margin-top:10px}
+.hum{display:flex;align-items:center;gap:20px}
+.tank{position:relative;flex:none;width:128px;height:128px;border-radius:50%;border:2px solid var(--line);overflow:hidden;background:#0d1f1a}
+.water{position:absolute;left:0;right:0;bottom:0;height:0;background:rgba(79,195,232,.88);transition:height 1s cubic-bezier(.2,.8,.2,1)}
+.water::before{content:"";position:absolute;left:-50%;top:-12px;width:200%;height:26px;border-radius:50%;background:rgba(79,195,232,.88);animation:slosh 7s linear infinite}
+@keyframes slosh{to{transform:translateX(25%)}}
+.tank b{position:absolute;inset:0;display:grid;place-items:center;font:700 1.9rem "Bricolage Grotesque",sans-serif;text-shadow:0 1px 8px rgba(0,0,0,.55)}
+.lamp{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;width:100%;cursor:pointer;color:var(--ink);font:inherit;background:var(--panel);border:1px solid var(--line);border-radius:26px;padding:22px;transition:border-color .3s,box-shadow .4s,background .3s;-webkit-tap-highlight-color:transparent}
+.lamp svg{width:52px;height:68px;margin-bottom:8px;fill:var(--panel2);stroke:var(--line);stroke-width:2;transition:fill .3s,filter .4s,stroke .3s}
+.lamp strong{font:700 1.25rem "Bricolage Grotesque",sans-serif}
+.lamp span{color:var(--mute);font-size:.88rem}
+.lamp em{font-style:normal;font-weight:500;margin-top:6px}
+#led_1[aria-checked=true]{border-color:var(--lime);background:var(--panel2);box-shadow:0 0 36px rgba(184,242,107,.22)}
+#led_1[aria-checked=true] svg{fill:var(--lime);stroke:var(--lime);filter:drop-shadow(0 0 14px rgba(184,242,107,.8))}
+#led_1[aria-checked=true] em{color:var(--lime)}
+#led_2[aria-checked=true]{border-color:var(--sky);background:var(--panel2);box-shadow:0 0 36px rgba(111,211,255,.22)}
+#led_2[aria-checked=true] svg{fill:var(--sky);stroke:var(--sky);filter:drop-shadow(0 0 14px rgba(111,211,255,.8))}
+#led_2[aria-checked=true] em{color:var(--sky)}
+.lamp:active{transform:scale(.98)}
+:focus-visible{outline:3px solid var(--sky);outline-offset:3px}
+.tablewrap{margin-top:14px;max-height:340px;overflow:auto;border-radius:14px;border:1px solid var(--line)}
+.log{width:100%;border-collapse:collapse;font-size:.9rem;font-variant-numeric:tabular-nums}
+.log th{position:sticky;top:0;background:var(--panel2);color:var(--mute);font-weight:500;text-align:left;padding:10px 14px}
+.log td{padding:9px 14px;border-top:1px solid var(--line)}
+.log td:nth-child(2){color:var(--lime)}
+.log td:nth-child(3){color:var(--sky)}
+.pc{width:100%;height:150px;display:block;margin-top:6px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;font-size:.8rem;color:var(--mute)}
+@media (max-width:560px){.row.sensors{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
 </head>
-
 <body>
-  <div class="glow g1"></div>
-  <div class="glow g2"></div>
-  <main>
-    <header>
-      <div>
-        <h1>Serre connectée</h1>
-        <p class="sub">Climat et éclairage, en direct</p>
+<div class="glow g1"></div><div class="glow g2"></div>
+<main>
+  <header>
+    <div><h1>Serre connectée</h1><p class="sub">Climat et éclairage, en direct</p></div>
+    <div class="pill" id="status" role="status"><i></i><span>Connexion…</span></div>
+  </header>
+
+  <section class="row sensors" aria-label="Mesures du capteur">
+    <div class="card">
+      <div class="lbl">Température</div>
+      <div class="big" id="temp">--<small>°C</small></div>
+      <div class="tag" id="tempTag">En attente du capteur</div>
+      <div class="scale"><div class="mk" id="mk"></div></div>
+      <div class="ends"><span>−10°</span><span>50°</span></div>
+    </div>
+    <div class="card">
+      <div class="lbl">Humidité de l'air</div>
+      <div class="hum" style="margin-top:14px">
+        <div class="tank"><div class="water" id="water"></div><b id="hum">--%</b></div>
+        <div class="tag" id="humTag">En attente du capteur</div>
       </div>
-      <div class="pill" id="status" role="status"><i></i><span>Connexion…</span></div>
-    </header>
+    </div>
+  </section>
 
-    <section class="row sensors" aria-label="Mesures du capteur">
-      <div class="card">
-        <div class="lbl">Température</div>
-        <div class="big" id="temp">--<small>°C</small></div>
-        <div class="tag" id="tempTag">En attente du capteur</div>
-        <div class="scale">
-          <div class="mk" id="mk"></div>
-        </div>
-        <div class="ends"><span>−10°</span><span>50°</span></div>
-      </div>
-      <div class="card">
-        <div class="lbl">Humidité de l'air</div>
-        <div class="hum" style="margin-top:14px">
-          <div class="tank">
-            <div class="water" id="water"></div><b id="hum">--%</b>
-          </div>
-          <div class="tag" id="humTag">En attente du capteur</div>
-        </div>
-      </div>
-    </section>
+  <section class="row" aria-label="Lampes">
+    <button class="lamp" id="led_1" role="switch" aria-checked="false">
+      <svg viewBox="0 0 48 64" aria-hidden="true"><path d="M24 4C13 4 6 12 6 22c0 7 4 11 8 16 2 3 3 5 3 8h14c0-3 1-5 3-8 4-5 8-9 8-16C42 12 35 4 24 4z"/><rect x="16" y="50" width="16" height="5" rx="2"/><rect x="19" y="57" width="10" height="4" rx="2"/></svg>
+      <strong>Lampe verte</strong><span>LED 1, GPIO 22</span><em id="t1">Éteinte</em>
+    </button>
+    <button class="lamp" id="led_2" role="switch" aria-checked="false">
+      <svg viewBox="0 0 48 64" aria-hidden="true"><path d="M24 4C13 4 6 12 6 22c0 7 4 11 8 16 2 3 3 5 3 8h14c0-3 1-5 3-8 4-5 8-9 8-16C42 12 35 4 24 4z"/><rect x="16" y="50" width="16" height="5" rx="2"/><rect x="19" y="57" width="10" height="4" rx="2"/></svg>
+      <strong>Lampe bleue</strong><span>LED 2, GPIO 23</span><em id="t2">Éteinte</em>
+    </button>
+  </section>
 
-    <section class="row" aria-label="Lampes">
-      <button class="lamp" id="led_1" role="switch" aria-checked="false">
-        <svg viewBox="0 0 48 64" aria-hidden="true">
-          <path d="M24 4C13 4 6 12 6 22c0 7 4 11 8 16 2 3 3 5 3 8h14c0-3 1-5 3-8 4-5 8-9 8-16C42 12 35 4 24 4z" />
-          <rect x="16" y="50" width="16" height="5" rx="2" />
-          <rect x="19" y="57" width="10" height="4" rx="2" />
-        </svg>
-        <strong>Lampe verte</strong><span>LED 1, GPIO 22</span><em id="t1">Éteinte</em>
-      </button>
-      <button class="lamp" id="led_2" role="switch" aria-checked="false">
-        <svg viewBox="0 0 48 64" aria-hidden="true">
-          <path d="M24 4C13 4 6 12 6 22c0 7 4 11 8 16 2 3 3 5 3 8h14c0-3 1-5 3-8 4-5 8-9 8-16C42 12 35 4 24 4z" />
-          <rect x="16" y="50" width="16" height="5" rx="2" />
-          <rect x="19" y="57" width="10" height="4" rx="2" />
-        </svg>
-        <strong>Lampe bleue</strong><span>LED 2, GPIO 23</span><em id="t2">Éteinte</em>
-      </button>
-    </section>
+  <section class="card" aria-label="Prédictions">
+    <div class="lbl">Prédictions <span id="predAge"></span></div>
+    <div class="row" style="margin-top:12px">
+      <div><div class="lbl">Température dans <span class="pmin">--</span> min</div>
+        <div class="big" style="font-size:2.6rem;color:var(--lime)"><span id="pT">--</span><small>°C</small></div>
+        <div class="tag" id="pTt">En attente du serveur</div></div>
+      <div><div class="lbl">Humidité dans <span class="pmin">--</span> min</div>
+        <div class="big" style="font-size:2.6rem;color:var(--sky)"><span id="pH">--</span><small>%</small></div>
+        <div class="tag" id="pHt">En attente du serveur</div></div>
+    </div>
+    <div class="legend"><span style="color:var(--lime)">● Température (axe gauche)</span><span style="color:var(--sky)">● Humidité (axe droit)</span><span>━ mesures réelles</span><span>┅ prédiction</span></div>
+    <canvas class="pc" id="cp" style="height:220px"></canvas>
+  </section>
 
-    <section class="card" aria-label="Journal des capteurs">
-      <div class="lbl">Journal des capteurs</div>
-      <div class="tablewrap">
-        <table class="log">
-          <thead>
-            <tr>
-              <th>Temps</th>
-              <th>Température</th>
-              <th>Humidité</th>
-            </tr>
-          </thead>
-          <tbody id="log">
-            <tr>
-              <td colspan="3">Chargement…</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-  </main>
+  <section class="card" aria-label="Journal des capteurs">
+    <div class="lbl">Journal des capteurs</div>
+    <div class="tablewrap">
+      <table class="log">
+        <thead><tr><th>Temps</th><th>Température</th><th>Humidité</th></tr></thead>
+        <tbody id="log"><tr><td colspan="3">Chargement…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+</main>
 
-  <script>
-    const DB = "https://projetiot-e1bdb-default-rtdb.europe-west1.firebasedatabase.app";
-    const $ = id => document.getElementById(id);
-    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-    let busy = false;
+<script>
+const DB = "https://projetiot-e1bdb-default-rtdb.europe-west1.firebasedatabase.app";
+const $ = id => document.getElementById(id);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+let busy = false;
 
-    function setStatus(ok, msg) {
-      $("status").className = "pill " + (ok ? "ok" : "err");
-      $("status").querySelector("span").textContent = msg;
-    }
-    function setLed(k, on) {
-      const n = k === "led_1" ? "1" : "2";
-      $(k).setAttribute("aria-checked", String(on));
-      $("t" + n).textContent = on ? "Allumée" : "Éteinte";
-      document.body.classList.toggle("l" + n, on);
-    }
-    function setSensors(s) {
-      const t = Number(s.temperature), h = Number(s.humidity);
-      if (!isNaN(t)) {
-        $("temp").innerHTML = t.toFixed(1) + "<small>°C</small>";
-        $("mk").style.left = "calc(" + clamp((t + 10) / 60 * 100, 0, 100) + "% - 2px)";
-        $("tempTag").textContent = t < 12 ? "Frais" : t < 18 ? "Doux" : t <= 26 ? "Agréable" : t <= 32 ? "Chaud" : "Très chaud";
-      }
-      if (!isNaN(h)) {
-        $("hum").textContent = Math.round(h) + "%";
-        $("water").style.height = clamp(h, 0, 100) + "%";
-        $("humTag").textContent = h < 30 ? "Air sec" : h <= 60 ? "Confortable" : "Air humide";
-      }
-    }
+function setStatus(ok, msg) {
+  $("status").className = "pill " + (ok ? "ok" : "err");
+  $("status").querySelector("span").textContent = msg;
+}
+function setLed(k, on) {
+  const n = k === "led_1" ? "1" : "2";
+  $(k).setAttribute("aria-checked", String(on));
+  $("t" + n).textContent = on ? "Allumée" : "Éteinte";
+  document.body.classList.toggle("l" + n, on);
+}
+function setSensors(s) {
+  const t = Number(s.temperature), h = Number(s.humidity);
+  if (!isNaN(t)) {
+    $("temp").innerHTML = t.toFixed(1) + "<small>°C</small>";
+    $("mk").style.left = "calc(" + clamp((t + 10) / 60 * 100, 0, 100) + "% - 2px)";
+    $("tempTag").textContent = t < 12 ? "Frais" : t < 18 ? "Doux" : t <= 26 ? "Agréable" : t <= 32 ? "Chaud" : "Très chaud";
+  }
+  if (!isNaN(h)) {
+    $("hum").textContent = Math.round(h) + "%";
+    $("water").style.height = clamp(h, 0, 100) + "%";
+    $("humTag").textContent = h < 30 ? "Air sec" : h <= 60 ? "Confortable" : "Air humide";
+  }
+}
 
-    // Lit uniquement les LEDs et les capteurs (sans télécharger tout l'historique)
-    async function refresh() {
-      if (busy) return;
-      try {
-        const [a, b, c] = await Promise.all(["led_1", "led_2", "sensors"].map(k => fetch(DB + "/" + k + ".json")));
-        if (!a.ok) throw new Error("HTTP " + a.status);
-        setLed("led_1", !!(await a.json()));
-        setLed("led_2", !!(await b.json()));
-        const s = await c.json();
-        if (s) setSensors(s);
-        setStatus(true, "En ligne, " + new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
-      } catch (e) { setStatus(false, "Lecture impossible (" + e.message + ")"); }
-    }
+// Lit uniquement les LEDs et les capteurs (sans télécharger tout l'historique)
+async function refresh() {
+  if (busy) return;
+  try {
+    const [a, b, c] = await Promise.all(["led_1", "led_2", "sensors"].map(k => fetch(DB + "/" + k + ".json")));
+    if (!a.ok) throw new Error("HTTP " + a.status);
+    setLed("led_1", !!(await a.json()));
+    setLed("led_2", !!(await b.json()));
+    const s = await c.json();
+    if (s) setSensors(s);
+    setStatus(true, "En ligne, " + new Date().toLocaleTimeString("fr-FR", {hour:"2-digit",minute:"2-digit",second:"2-digit"}));
+  } catch (e) { setStatus(false, "Lecture impossible (" + e.message + ")"); }
+}
 
-    async function toggle(k) {
-      const next = $(k).getAttribute("aria-checked") !== "true";
-      setLed(k, next); busy = true;
-      try {
-        const r = await fetch(DB + "/" + k + ".json", { method: "PUT", body: JSON.stringify(next) });
-        if (!r.ok) throw new Error("HTTP " + r.status);
-        setStatus(true, (k === "led_1" ? "Lampe verte" : "Lampe bleue") + (next ? " allumée" : " éteinte"));
-      } catch (e) {
-        setLed(k, !next);
-        setStatus(false, "Écriture refusée (" + e.message + "). Vérifiez les règles Firebase");
-      } finally { setTimeout(() => { busy = false; }, 1500); }
-    }
+async function toggle(k) {
+  const next = $(k).getAttribute("aria-checked") !== "true";
+  setLed(k, next); busy = true;
+  try {
+    const r = await fetch(DB + "/" + k + ".json", { method: "PUT", body: JSON.stringify(next) });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    setStatus(true, (k === "led_1" ? "Lampe verte" : "Lampe bleue") + (next ? " allumée" : " éteinte"));
+  } catch (e) {
+    setLed(k, !next);
+    setStatus(false, "Écriture refusée (" + e.message + "). Vérifiez les règles Firebase");
+  } finally { setTimeout(() => { busy = false; }, 1500); }
+}
 
-    // Journal : 100 dernières mesures de /history, plus récentes en haut
-    async function loadHistory() {
-      try {
-        const r = await fetch(DB + "/history.json?orderBy=%22%24key%22&limitToLast=100");
-        if (!r.ok) throw new Error("HTTP " + r.status);
-        const rows = Object.values(await r.json() || {}).sort((a, b) => b.ts - a.ts);
-        $("log").innerHTML = rows.map(e => `<tr>
-      <td>${new Date(e.ts).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" })}</td>
+// Journal : 20 dernières mesures de /log, plus récentes en haut
+let logRows = [], predData = null;
+async function loadHistory() {
+  try {
+    const r = await fetch(DB + "/log.json");
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const rows = Object.values(await r.json() || {}).filter(Boolean).sort((a, b) => b.ts - a.ts);
+    logRows = rows.slice().reverse(); renderCharts();
+    $("log").innerHTML = rows.map(e => `<tr>
+      <td>${new Date(e.ts).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit"})}</td>
       <td>${Number(e.temperature).toFixed(1)} °C</td>
       <td>${Number(e.humidity).toFixed(0)} %</td></tr>`).join("")
-          || '<tr><td colspan="3">Aucune mesure enregistrée</td></tr>';
-      } catch (e) {
-        $("log").innerHTML = '<tr><td colspan="3">Historique indisponible (' + e.message + ')</td></tr>';
-      }
+      || '<tr><td colspan="3">Aucune mesure enregistrée</td></tr>';
+  } catch (e) {
+    $("log").innerHTML = '<tr><td colspan="3">Historique indisponible (' + e.message + ')</td></tr>';
+  }
+}
+
+
+// Prédictions calculées par le serveur Python (/predictions)
+const ARROW = {hausse: "↗ en hausse", baisse: "↘ en baisse", stable: "→ stable"};
+async function loadPredictions() {
+  try {
+    const r = await fetch(DB + "/predictions.json");
+    const p = await r.json();
+    if (!p || !p.points || !p.points.length) return;
+    predData = p; renderCharts();
+    const last = p.points[p.points.length - 1];
+    const mins = Math.round((last.ts - p.updated) / 60000) || p.points.length;
+    document.querySelectorAll(".pmin").forEach(e => e.textContent = Math.max(mins, 1));
+    $("pT").textContent = last.temperature.toFixed(1);
+    $("pH").textContent = Math.round(last.humidity);
+    $("pTt").textContent = ARROW[p.temperature.trend] + " (" + p.temperature.per_min + " °C/min)";
+    $("pHt").textContent = ARROW[p.humidity.trend] + " (" + p.humidity.per_min + " %/min)";
+    $("predAge").textContent = "· mis à jour " + new Date(p.updated).toLocaleTimeString("fr-FR");
+  } catch (e) {}
+}
+loadPredictions(); setInterval(loadPredictions, 30000);
+
+// Courbe unique : température (verte, axe gauche) et humidité (bleue, axe droit)
+// Trait plein = mesures réelles, pointillés = prédiction
+function drawChart(canvas, series) {
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.width = canvas.clientWidth * dpr, H = canvas.height = canvas.clientHeight * dpr;
+  const g = canvas.getContext("2d"); g.clearRect(0, 0, W, H);
+  const pts = series.flatMap(s => s.past.concat(s.future));
+  if (pts.length < 2) { g.fillStyle = "#88a396"; g.font = 13*dpr + "px sans-serif"; g.fillText("En attente de mesures…", 8*dpr, H/2); return; }
+  const padL = 38*dpr, padR = 38*dpr, padT = 12*dpr, padB = 22*dpr;
+  const x0 = Math.min(...pts.map(p => p.x)), x1 = Math.max(...pts.map(p => p.x));
+  const X = x => padL + (x - x0) / ((x1 - x0) || 1) * (W - padL - padR);
+  g.font = 11*dpr + "px sans-serif"; g.strokeStyle = "#244139"; g.lineWidth = 1;
+  [padT, (padT + H - padB) / 2, H - padB].forEach(y => { g.beginPath(); g.moveTo(padL, y); g.lineTo(W - padR, y); g.stroke(); });
+  const hm = t => new Date(t).toLocaleTimeString("fr-FR", {hour:"2-digit", minute:"2-digit"});
+  g.fillStyle = "#88a396"; g.fillText(hm(x0), padL, H - 4*dpr); g.textAlign = "right"; g.fillText(hm(x1), W - padR, H - 4*dpr);
+  series.forEach((s, idx) => {
+    const all = s.past.concat(s.future);
+    if (!all.length) return;
+    let y0 = Math.min(...all.map(p => p.y)), y1 = Math.max(...all.map(p => p.y));
+    const m = (y1 - y0) * 0.2 || 1; y0 -= m; y1 += m;
+    const Y = y => H - padB - (y - y0) / (y1 - y0) * (H - padT - padB);
+    g.fillStyle = s.color; g.textAlign = idx ? "left" : "right";
+    const lx = idx ? W - padR + 4*dpr : padL - 4*dpr;
+    g.fillText(y1.toFixed(1), lx, padT + 4*dpr); g.fillText(y0.toFixed(1), lx, H - padB);
+    const path = (arr, dash) => {
+      g.beginPath(); g.setLineDash(dash ? [6*dpr, 5*dpr] : []);
+      arr.forEach((p, i) => i ? g.lineTo(X(p.x), Y(p.y)) : g.moveTo(X(p.x), Y(p.y)));
+      g.strokeStyle = s.color; g.lineWidth = 2.5*dpr; g.lineJoin = "round"; g.stroke(); g.setLineDash([]);
+    };
+    if (s.past.length > 1) path(s.past, false);
+    if (s.future.length) {
+      path(s.past.length ? [s.past[s.past.length - 1]].concat(s.future) : s.future, true);
+      g.fillStyle = s.color; s.future.forEach(p => { g.beginPath(); g.arc(X(p.x), Y(p.y), 3.5*dpr, 0, 7); g.fill(); });
     }
+  });
+  const now = series[0].past.length ? series[0].past[series[0].past.length - 1].x : null;
+  if (now && series[0].future.length) {   // repère « maintenant »
+    g.strokeStyle = "#88a396"; g.setLineDash([2*dpr, 4*dpr]); g.beginPath();
+    g.moveTo(X(now), padT); g.lineTo(X(now), H - padB); g.stroke(); g.setLineDash([]);
+  }
+  g.textAlign = "left";
+}
+function renderCharts() {
+  const pts = (rows, k) => rows.map(r => ({x: r.ts, y: Number(r[k])}));
+  const fut = predData && predData.points ? predData.points : [];
+  drawChart($("cp"), [
+    {past: pts(logRows, "temperature"), future: pts(fut, "temperature"), color: "#b8f26b"},
+    {past: pts(logRows, "humidity"),    future: pts(fut, "humidity"),    color: "#6fd3ff"}
+  ]);
+}
+window.addEventListener("resize", renderCharts);
 
-    ["led_1", "led_2"].forEach(k => $(k).addEventListener("click", () => toggle(k)));
-    refresh(); setInterval(refresh, 2000);
-    loadHistory(); setInterval(loadHistory, 30000);
-  </script>
+["led_1", "led_2"].forEach(k => $(k).addEventListener("click", () => toggle(k)));
+refresh(); setInterval(refresh, 2000);
+loadHistory(); setInterval(loadHistory, 30000);
+</script>
 </body>
-
 </html>
